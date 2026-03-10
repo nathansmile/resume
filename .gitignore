@@ -137,3 +137,11 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Project specific
+uploads/
+*.pdf
+*.db
+*.sqlite
+dump.rdb
+prisma/migrations/

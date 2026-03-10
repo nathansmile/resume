@@ -1,0 +1,151 @@
+// Prisma schema for Resume Screening System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 候选人表
+model Candidate {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String?
+  email         String?
+  city          String?
+  status        CandidateStatus @default(PENDING)
+  pdfUrl        String
+  pdfThumbnail  String?
+  rawText       String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  educations      Education[]
+  workExperiences WorkExperience[]
+  skills          Skill[]
+  projects        Project[]
+  evaluations     Evaluation[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("candidates")
+}
+
+// 教育背景表
+model Education {
+  id             String   @id @default(uuid())
+  candidateId    String
+  school         String
+  major          String?
+  degree         String?
+  graduationDate DateTime?
+  orderIndex     Int      @default(0)
+
+  // Relations
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@map("educations")
+}
+
+// 工作经历表
+model WorkExperience {
+  id          String    @id @default(uuid())
+  candidateId String
+  company     String
+  position    String
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?   @db.Text
+  orderIndex  Int       @default(0)
+
+  // Relations
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@map("work_experiences")
+}
+
+// 技能表
+model Skill {
+  id          String  @id @default(uuid())
+  candidateId String
+  skillName   String
+  category    String?
+
+  // Relations
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([skillName])
+  @@map("skills")
+}
+
+// 项目经历表
+model Project {
+  id          String   @id @default(uuid())
+  candidateId String
+  projectName String
+  techStack   String[]
+  role        String?
+  highlights  String?  @db.Text
+  orderIndex  Int      @default(0)
+
+  // Relations
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@map("projects")
+}
+
+// 岗位描述表
+model JobDescription {
+  id              String   @id @default(uuid())
+  title           String
+  description     String   @db.Text
+  requiredSkills  String[]
+  preferredSkills String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  evaluations Evaluation[]
+
+  @@index([createdAt])
+  @@map("job_descriptions")
+}
+
+// 评分表
+model Evaluation {
+  id                String   @id @default(uuid())
+  candidateId       String
+  jobId             String
+  overallScore      Float
+  skillMatchScore   Float
+  experienceScore   Float
+  educationScore    Float
+  aiComment         String   @db.Text
+  createdAt         DateTime @default(now())
+
+  // Relations
+  candidate      Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobDescription JobDescription @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([jobId])
+  @@index([overallScore])
+  @@map("evaluations")
+}
+
+// 候选人状态枚举
+enum CandidateStatus {
+  PENDING
+  INITIAL_PASS
+  INTERVIEWING
+  HIRED
+  REJECTED
+}
