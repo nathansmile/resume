@@ -1,12 +1,28 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Layout as AntLayout, Menu } from 'antd';
-import { UploadOutlined, TeamOutlined, FileTextOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Layout as AntLayout, Menu, Button } from 'antd';
+import { UploadOutlined, TeamOutlined, FileTextOutlined, LogoutOutlined } from '@ant-design/icons';
 
 const { Header, Content, Sider } = AntLayout;
 
 export const Layout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token && location.pathname !== '/login') {
+      navigate('/login');
+    }
+  }, [location, navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    navigate('/login');
+  };
+
+  const username = localStorage.getItem('username');
 
   const menuItems = [
     {
@@ -28,9 +44,20 @@ export const Layout: React.FC = () => {
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', background: '#001529' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#001529' }}>
         <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
           简历智能筛选系统
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ color: 'white' }}>欢迎，{username}</span>
+          <Button
+            type="text"
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+            style={{ color: 'white' }}
+          >
+            退出
+          </Button>
         </div>
       </Header>
       <AntLayout>

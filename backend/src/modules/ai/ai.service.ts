@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import Anthropic from '@anthropic-ai/sdk';
 import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
 
 export interface ExtractedInfo {
   basicInfo: {
@@ -33,15 +33,18 @@ export interface ExtractedInfo {
 
 @Injectable()
 export class AiService {
-  private anthropic: Anthropic;
+  private client: OpenAI;
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
+    const apiKey = this.configService.get<string>('DASHSCOPE_API_KEY');
     if (!apiKey) {
-      console.warn('ANTHROPIC_API_KEY not set, AI features will not work');
+      console.warn('DASHSCOPE_API_KEY not set, AI features will not work');
     }
-    this.anthropic = new Anthropic({
+
+    // 使用阿里云百炼的 OpenAI 兼容接口
+    this.client = new OpenAI({
       apiKey: apiKey || 'dummy-key',
+      baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     });
   }
 
@@ -94,32 +97,28 @@ JSON格式：
 ${resumeText}`;
 
     try {
-      const stream = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
+      const stream = await this.client.chat.completions.create({
+        model: this.configService.get<string>('DASHSCOPE_MODEL') || 'qwen-plus',
         messages: [{ role: 'user', content: prompt }],
         stream: true,
       });
 
       let fullText = '';
 
-      for await (const event of stream) {
-        if (
-          event.type === 'content_block_delta' &&
-          event.delta.type === 'text_delta'
-        ) {
-          const text = event.delta.text;
-          fullText += text;
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          fullText += content;
 
           // Yield incremental updates
           yield {
             type: 'text',
-            content: text,
+            content: content,
             fullText: fullText,
           };
         }
 
-        if (event.type === 'message_stop') {
+        if (chunk.choices[0]?.finish_reason === 'stop') {
           // Try to parse the complete JSON
           try {
             const jsonMatch = fullText.match(/\{[\s\S]*\}/);
@@ -182,19 +181,18 @@ ${JSON.stringify(candidateInfo, null, 2)}
   "experienceScore": 78,
   "educationScore": 90,
   "overallScore": 82,
-  "aiComment": "候选人优势：...\n需要关注：..."
+  "aiComment": "候选人优势：...\\n需要关注：..."
 }`;
 
     try {
-      const response = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
+      const response = await this.client.chat.completions.create({
+        model: this.configService.get<string>('DASHSCOPE_MODEL') || 'qwen-plus',
         messages: [{ role: 'user', content: prompt }],
       });
 
-      const content = response.content[0];
-      if (content.type === 'text') {
-        const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      const content = response.choices[0]?.message?.content;
+      if (content) {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           return JSON.parse(jsonMatch[0]);
         }

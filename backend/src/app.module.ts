@@ -8,6 +8,7 @@ import { CandidatesModule } from './modules/candidates/candidates.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { EvaluationsModule } from './modules/evaluations/evaluations.module';
 import { AiModule } from './modules/ai/ai.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AiModule } from './modules/ai/ai.module';
     }),
     PrismaModule,
     AiModule,
+    AuthModule,
     ResumesModule,
     CandidatesModule,
     JobsModule,
