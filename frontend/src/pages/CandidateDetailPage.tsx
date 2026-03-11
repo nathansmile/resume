@@ -16,8 +16,9 @@ import {
   Progress,
   Space,
 } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, SyncOutlined } from '@ant-design/icons';
-import { candidatesApi, createExtractionSSE } from '../lib/api';
+import { CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, FilePdfOutlined, TrophyOutlined } from '@ant-design/icons';
+import { candidatesApi, createExtractionSSE, STATIC_BASE_URL } from '../lib/api';
+import { EvaluationModal } from '../components/EvaluationModal';
 import type { Candidate, CandidateStatus } from '../types';
 import type { ReactNode } from 'react';
 
@@ -50,6 +51,7 @@ export const CandidateDetailPage = () => {
   const queryClient = useQueryClient();
   const [extracting, setExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState('');
+  const [evaluationModalOpen, setEvaluationModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['candidate', id],
@@ -128,6 +130,12 @@ export const CandidateDetailPage = () => {
         title="候选人基本信息"
         extra={
           <Space>
+            <Button
+              icon={<TrophyOutlined />}
+              onClick={() => setEvaluationModalOpen(true)}
+            >
+              岗位匹配评分
+            </Button>
             <Select
               value={currentStatus}
               style={{ width: 150 }}
@@ -186,6 +194,29 @@ export const CandidateDetailPage = () => {
           <Descriptions.Item label="城市">{candidateData.city || '-'}</Descriptions.Item>
         </Descriptions>
       </Card>
+
+      {candidateData.pdfUrl && (
+        <Card
+          title="PDF 预览"
+          style={{ marginTop: 16 }}
+          extra={
+            <Button
+              type="link"
+              icon={<FilePdfOutlined />}
+              href={`${STATIC_BASE_URL}${candidateData.pdfUrl}`}
+              target="_blank"
+            >
+              下载原文件
+            </Button>
+          }
+        >
+          <iframe
+            src={`${STATIC_BASE_URL}${candidateData.pdfUrl}`}
+            style={{ width: '100%', height: '500px', border: 'none' }}
+            title="PDF Preview"
+          />
+        </Card>
+      )}
 
       {candidateData.skills && candidateData.skills.length > 0 && (
         <Card title="技能标签" style={{ marginTop: 16 }}>
@@ -258,6 +289,17 @@ export const CandidateDetailPage = () => {
           ))}
         </Card>
       )}
+
+      <EvaluationModal
+        open={evaluationModalOpen}
+        onClose={() => {
+          setEvaluationModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['candidate', id] });
+        }}
+        candidateId={candidateData.id}
+        candidateName={candidateData.name}
+        existingEvaluations={candidateData.evaluations || []}
+      />
     </div>
   );
 };

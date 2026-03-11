@@ -145,3 +145,5 @@ uploads/
 *.sqlite
 dump.rdb
 prisma/migrations/
+
+_build/

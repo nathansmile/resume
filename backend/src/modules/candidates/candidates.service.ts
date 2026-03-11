@@ -150,22 +150,13 @@ export class CandidatesService {
       };
     }
 
-    const orderBy: any = {};
-    if (sortBy === 'score') {
-      orderBy.evaluations = {
-        _max: {
-          overallScore: sortOrder,
-        },
-      };
-    } else {
-      orderBy[sortBy] = sortOrder;
-    }
+    const orderBy: any = sortBy === 'score' ? { createdAt: 'desc' } : { [sortBy]: sortOrder };
 
     const [data, total] = await Promise.all([
       this.prisma.candidate.findMany({
         where,
-        skip,
-        take,
+        skip: sortBy === 'score' ? 0 : skip,
+        take: sortBy === 'score' ? undefined : take,
         orderBy,
         include: {
           skills: true,
@@ -185,8 +176,17 @@ export class CandidatesService {
       this.prisma.candidate.count({ where }),
     ]);
 
+    let result = data;
+    if (sortBy === 'score') {
+      result = data.sort((a, b) => {
+        const aScore = (a.evaluations as any[])?.[0]?.overallScore ?? -1;
+        const bScore = (b.evaluations as any[])?.[0]?.overallScore ?? -1;
+        return sortOrder === 'desc' ? bScore - aScore : aScore - bScore;
+      }).slice(skip, skip + take);
+    }
+
     return {
-      data,
+      data: result,
       total,
       page: Math.floor(skip / take) + 1,
       pageSize: take,
