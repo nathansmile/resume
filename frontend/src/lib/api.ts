@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+export const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -57,12 +58,15 @@ export const resumesApi = {
 
 // Candidates API
 export const candidatesApi = {
+  getAll: (params?: { page?: number; pageSize?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string; skill?: string }) =>
+    api.get('/candidates', { params }),
   getOne: (id: string) => api.get(`/candidates/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/candidates/${id}/status`, { status }),
   updateInfo: (id: string, data: any) => api.patch(`/candidates/${id}`, data),
   compare: (candidateIds: string[]) =>
     api.post('/candidates/compare', { candidateIds }),
+  delete: (id: string) => api.delete(`/candidates/${id}`),
 };
 
 // Jobs API

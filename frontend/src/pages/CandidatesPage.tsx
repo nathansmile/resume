@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Table, Input, Select, Button, Tag, Space, Card, Row, Col, Checkbox, Modal, Descriptions } from 'antd';
-import { EyeOutlined, AppstoreOutlined, UnorderedListOutlined, SwapOutlined } from '@ant-design/icons';
-import { resumesApi } from '../lib/api';
-import type { Candidate, CandidateStatus } from '../types';
+import { Table, Input, Select, Button, Tag, Space, Card, Row, Col, Checkbox, Modal, Descriptions, Popconfirm, message } from 'antd';
+import { EyeOutlined, AppstoreOutlined, UnorderedListOutlined, SwapOutlined, DeleteOutlined } from '@ant-design/icons';
+import { candidatesApi } from '../lib/api';
+import type { Candidate, CandidateStatus, Evaluation } from '../types';
 
 const { Search } = Input;
 const { Option } = Select;

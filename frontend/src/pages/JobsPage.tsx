@@ -7,7 +7,6 @@ import {
   Form,
   Input,
   Select,
-  List,
   Tag,
   Space,
   message,
@@ -98,59 +97,44 @@ export const JobsPage: React.FC = () => {
         </Button>
       </div>
 
-      <List
-        loading={isLoading}
-        dataSource={jobs?.data || []}
-        renderItem={(job: JobDescription) => (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+        {isLoading ? (
+          <Card loading style={{ gridColumn: '1 / -1' }} />
+        ) : (jobs?.data || []).map((job: JobDescription) => (
           <Card
             key={job.id}
-            style={{ marginBottom: 16 }}
-            title={job.title}
+            size="small"
+            title={<span style={{ fontSize: 14 }}>{job.title}</span>}
             extra={
-              <Space>
-                <Button
-                  type="link"
-                  icon={<EditOutlined />}
-                  onClick={() => handleEdit(job)}
-                >
-                  编辑
-                </Button>
-                <Button
-                  type="link"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDelete(job.id)}
-                >
-                  删除
-                </Button>
+              <Space size={0}>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(job)} />
+                <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(job.id)} />
               </Space>
             }
           >
-            <p>{job.description}</p>
-            <div style={{ marginTop: 16 }}>
-              <div style={{ marginBottom: 8 }}>
-                <strong>必备技能：</strong>
-                {job.requiredSkills.map((skill) => (
-                  <Tag key={skill} color="red">
-                    {skill}
-                  </Tag>
-                ))}
-              </div>
-              <div>
-                <strong>加分技能：</strong>
-                {job.preferredSkills.map((skill) => (
-                  <Tag key={skill} color="blue">
-                    {skill}
-                  </Tag>
-                ))}
-              </div>
+            <p style={{ margin: '0 0 8px', color: '#555', fontSize: 13, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              {job.description}
+            </p>
+            <div style={{ fontSize: 12 }}>
+              <span style={{ color: '#666' }}>必备：</span>
+              {job.requiredSkills.map((skill) => (
+                <Tag key={skill} color="red" style={{ marginRight: 4, marginBottom: 4, fontSize: 11 }}>{skill}</Tag>
+              ))}
             </div>
-            <p style={{ marginTop: 8, color: '#999', fontSize: '12px' }}>
-              创建时间: {new Date(job.createdAt).toLocaleString('zh-CN')}
+            {job.preferredSkills?.length > 0 && (
+              <div style={{ fontSize: 12, marginTop: 4 }}>
+                <span style={{ color: '#666' }}>加分：</span>
+                {job.preferredSkills.map((skill) => (
+                  <Tag key={skill} color="blue" style={{ marginRight: 4, marginBottom: 4, fontSize: 11 }}>{skill}</Tag>
+                ))}
+              </div>
+            )}
+            <p style={{ margin: '6px 0 0', color: '#bbb', fontSize: 11 }}>
+              {new Date(job.createdAt).toLocaleString('zh-CN')}
             </p>
           </Card>
-        )}
-      />
+        ))}
+      </div>
 
       <Modal
         title={editingJob ? '编辑岗位' : '创建岗位'}
