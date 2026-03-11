@@ -68,21 +68,15 @@ export class CandidatesController {
     return new Observable((observer) => {
       (async () => {
         try {
-          let extractedData = null;
-
           for await (const chunk of this.aiService.extractResumeInfo(candidate.rawText)) {
+            if (chunk.type === 'complete') {
+              // Save to database first, then notify frontend so refetch gets fresh data
+              await this.candidatesService.updateExtractedInfo(id, chunk.data);
+            }
+
             observer.next({
               data: JSON.stringify(chunk),
             } as MessageEvent);
-
-            if (chunk.type === 'complete') {
-              extractedData = chunk.data;
-            }
-          }
-
-          // Save extracted info to database
-          if (extractedData) {
-            await this.candidatesService.updateExtractedInfo(id, extractedData);
           }
 
           observer.complete();

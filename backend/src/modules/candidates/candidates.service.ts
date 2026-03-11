@@ -13,6 +13,12 @@ export class CandidatesService {
   async updateExtractedInfo(candidateId: string, extractedInfo: ExtractedInfo) {
     const { basicInfo, educations, workExperiences, skills, projects } = extractedInfo;
 
+    // Delete existing related data first to avoid duplicates
+    await this.prisma.education.deleteMany({ where: { candidateId } });
+    await this.prisma.workExperience.deleteMany({ where: { candidateId } });
+    await this.prisma.skill.deleteMany({ where: { candidateId } });
+    await this.prisma.project.deleteMany({ where: { candidateId } });
+
     // Update candidate basic info
     await this.prisma.candidate.update({
       where: { id: candidateId },
