@@ -141,6 +141,9 @@ export const UploadPage: React.FC = () => {
       return;
     }
 
+    console.log('Uploading files:', fileList);
+    console.log('File types:', fileList.map(f => ({ name: f.name, type: f.type, size: f.size })));
+
     uploadMutation.mutate(fileList);
   };
 

@@ -54,41 +54,44 @@ export class AiService {
 要求：
 1. 仔细分析简历内容，提取所有关键信息
 2. 如果某些信息缺失，对应字段可以为空或null
-3. 技能标签需要提取所有技术栈、工具、语言等
-4. 返回严格的JSON格式，不要有其他文字
+3. 技能标签需要提取所有技术栈、工具、语言等（尽可能全面）
+4. 所有日期必须格式化为 YYYY-MM 格式（例如：2023-06，2024-01）
+5. 工作内容描述要简洁，提取核心职责和成果
+6. 项目亮点要突出技术难点和个人贡献
+7. 返回严格的JSON格式，不要有其他文字
 
 JSON格式：
 {
   "basicInfo": {
     "name": "姓名",
-    "phone": "电话",
-    "email": "邮箱",
-    "city": "城市"
+    "phone": "电话号码",
+    "email": "邮箱地址",
+    "city": "所在城市"
   },
   "educations": [
     {
       "school": "学校名称",
-      "major": "专业",
+      "major": "专业名称",
       "degree": "学历（本科/硕士/博士）",
-      "graduationDate": "毕业时间（YYYY-MM格式）"
+      "graduationDate": "毕业时间（YYYY-MM格式，如2023-06）"
     }
   ],
   "workExperiences": [
     {
       "company": "公司名称",
-      "position": "职位",
-      "startDate": "开始时间（YYYY-MM）",
-      "endDate": "结束时间（YYYY-MM或至今）",
-      "description": "工作内容简要描述"
+      "position": "职位名称",
+      "startDate": "开始时间（YYYY-MM格式）",
+      "endDate": "结束时间（YYYY-MM格式，如果在职则为null）",
+      "description": "工作内容摘要（100字以内，突出核心职责和成果）"
     }
   ],
-  "skills": ["技能1", "技能2", "技能3"],
+  "skills": ["技能1", "技能2", "技能3", "..."],
   "projects": [
     {
       "projectName": "项目名称",
-      "techStack": ["技术1", "技术2"],
-      "role": "担任角色",
-      "highlights": "项目亮点"
+      "techStack": ["技术栈1", "技术栈2", "..."],
+      "role": "个人角色/职责",
+      "highlights": "项目亮点（技术难点、创新点、业务价值等）"
     }
   ]
 }

@@ -126,48 +126,45 @@ export const CandidateDetailPage = () => {
 
   return (
     <div>
-      <Card
-        title="候选人基本信息"
-        extra={
-          <Space>
-            <Button
-              icon={<TrophyOutlined />}
-              onClick={() => setEvaluationModalOpen(true)}
-            >
-              岗位匹配评分
-            </Button>
-            <Select
-              value={currentStatus}
-              style={{ width: 150 }}
-              onChange={(value) => statusMutation.mutate(value)}
-              loading={statusMutation.isPending}
-            >
-              {Object.entries(statusLabels).map(([key, label]) => (
-                <Select.Option key={key} value={key}>
-                  <Space>
-                    {statusIcons[key as CandidateStatus]}
-                    <Tag color={statusColors[key as CandidateStatus]}>{label}</Tag>
-                  </Space>
-                </Select.Option>
-              ))}
-            </Select>
-            <Button type="primary" onClick={handleExtract} loading={extracting}>
-              {extracting ? '提取中...' : 'AI 提取信息'}
-            </Button>
-          </Space>
-        }
-      >
-        {extracting && (
-          <div style={{ marginBottom: 16 }}>
-            <Progress percent={50} status="active" />
-            <p style={{ marginTop: 8, color: '#666' }}>{extractionProgress}</p>
-          </div>
-        )}
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <Button
+          icon={<TrophyOutlined />}
+          onClick={() => setEvaluationModalOpen(true)}
+        >
+          岗位匹配评分
+        </Button>
+        <Select
+          value={currentStatus}
+          style={{ width: 150 }}
+          onChange={(value) => statusMutation.mutate(value)}
+          loading={statusMutation.isPending}
+        >
+          {Object.entries(statusLabels).map(([key, label]) => (
+            <Select.Option key={key} value={key}>
+              <Space>
+                {statusIcons[key as CandidateStatus]}
+                <Tag color={statusColors[key as CandidateStatus]}>{label}</Tag>
+              </Space>
+            </Select.Option>
+          ))}
+        </Select>
+        <Button type="primary" onClick={handleExtract} loading={extracting}>
+          {extracting ? '提取中...' : 'AI 提取信息'}
+        </Button>
+      </div>
 
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col span={24}>
-            <div style={{ padding: '16px', background: '#f5f5f5', borderRadius: '8px' }}>
-              <Space size="large">
+      {extracting && (
+        <Card style={{ marginBottom: 16 }}>
+          <Progress percent={50} status="active" />
+          <p style={{ marginTop: 8, color: '#666' }}>{extractionProgress}</p>
+        </Card>
+      )}
+
+      <Row gutter={16}>
+        <Col xs={24} lg={12}>
+          <Card title="候选人基本信息" style={{ height: '100%' }}>
+            <div style={{ padding: '16px', background: '#f5f5f5', borderRadius: '8px', marginBottom: 16 }}>
+              <Space size="large" direction="vertical" style={{ width: '100%' }}>
                 <div>
                   <strong>当前状态：</strong>
                   <Tag
@@ -184,39 +181,41 @@ export const CandidateDetailPage = () => {
                 </div>
               </Space>
             </div>
-          </Col>
-        </Row>
 
-        <Descriptions bordered column={2}>
-          <Descriptions.Item label="姓名">{candidateData.name}</Descriptions.Item>
-          <Descriptions.Item label="电话">{candidateData.phone || '-'}</Descriptions.Item>
-          <Descriptions.Item label="邮箱">{candidateData.email || '-'}</Descriptions.Item>
-          <Descriptions.Item label="城市">{candidateData.city || '-'}</Descriptions.Item>
-        </Descriptions>
-      </Card>
+            <Descriptions bordered column={1} size="small">
+              <Descriptions.Item label="姓名">{candidateData.name}</Descriptions.Item>
+              <Descriptions.Item label="电话">{candidateData.phone || '-'}</Descriptions.Item>
+              <Descriptions.Item label="邮箱">{candidateData.email || '-'}</Descriptions.Item>
+              <Descriptions.Item label="城市">{candidateData.city || '-'}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        </Col>
 
-      {candidateData.pdfUrl && (
-        <Card
-          title="PDF 预览"
-          style={{ marginTop: 16 }}
-          extra={
-            <Button
-              type="link"
-              icon={<FilePdfOutlined />}
-              href={`${STATIC_BASE_URL}${candidateData.pdfUrl}`}
-              target="_blank"
+        <Col xs={24} lg={12}>
+          {candidateData.pdfUrl && (
+            <Card
+              title="PDF 预览"
+              style={{ height: '100%' }}
+              extra={
+                <Button
+                  type="link"
+                  icon={<FilePdfOutlined />}
+                  href={`${STATIC_BASE_URL}${candidateData.pdfUrl}`}
+                  target="_blank"
+                >
+                  下载原文件
+                </Button>
+              }
             >
-              下载原文件
-            </Button>
-          }
-        >
-          <iframe
-            src={`${STATIC_BASE_URL}${candidateData.pdfUrl}`}
-            style={{ width: '100%', height: '500px', border: 'none' }}
-            title="PDF Preview"
-          />
-        </Card>
-      )}
+              <iframe
+                src={`${STATIC_BASE_URL}${candidateData.pdfUrl}`}
+                style={{ width: '100%', height: '600px', border: 'none' }}
+                title="PDF Preview"
+              />
+            </Card>
+          )}
+        </Col>
+      </Row>
 
       {candidateData.skills && candidateData.skills.length > 0 && (
         <Card title="技能标签" style={{ marginTop: 16 }}>
@@ -235,9 +234,13 @@ export const CandidateDetailPage = () => {
               <Timeline.Item key={edu.id}>
                 <h3>{edu.school}</h3>
                 <p>
-                  {edu.major} - {edu.degree}
+                  {edu.major} {edu.degree && `· ${edu.degree}`}
                 </p>
-                <p style={{ color: '#999' }}>{edu.graduationDate}</p>
+                <p style={{ color: '#999' }}>
+                  {edu.graduationDate
+                    ? new Date(edu.graduationDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })
+                    : '-'}
+                </p>
               </Timeline.Item>
             ))}
           </Timeline>
@@ -253,10 +256,14 @@ export const CandidateDetailPage = () => {
                   {work.position} @ {work.company}
                 </h3>
                 <p style={{ color: '#999' }}>
-                  {work.startDate ? new Date(work.startDate).toLocaleDateString('zh-CN') : ''} -{' '}
-                  {work.endDate ? new Date(work.endDate).toLocaleDateString('zh-CN') : '至今'}
+                  {work.startDate
+                    ? new Date(work.startDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })
+                    : '-'} - {' '}
+                  {work.endDate
+                    ? new Date(work.endDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })
+                    : '至今'}
                 </p>
-                {work.description && <p>{work.description}</p>}
+                {work.description && <p style={{ marginTop: 8 }}>{work.description}</p>}
               </Timeline.Item>
             ))}
           </Timeline>

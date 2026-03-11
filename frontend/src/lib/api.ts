@@ -42,14 +42,14 @@ export const authApi = {
 export const resumesApi = {
   upload: (files: File[]) => {
     const formData = new FormData();
+    console.log('Creating FormData with files:', files);
     files.forEach((file) => {
+      console.log('Appending file:', file.name, file.type, file.size);
       formData.append('files', file);
     });
-    return api.post('/resumes/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    console.log('FormData entries:', Array.from(formData.entries()));
+    // 不设置 Content-Type，让浏览器自动设置正确的 multipart/form-data boundary
+    return api.post('/resumes/upload', formData);
   },
   getAll: (params?: { page?: number; pageSize?: number; status?: string; search?: string }) =>
     api.get('/resumes', { params }),
