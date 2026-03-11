@@ -3,8 +3,10 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Param,
   Body,
+  Query,
   Sse,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,6 +23,39 @@ export class CandidatesController {
     private readonly aiService: AiService,
     private readonly prisma: PrismaService,
   ) {}
+
+  @Get()
+  async findAll(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('skill') skill?: string,
+  ) {
+    const pageNum = parseInt(page || '1') || 1;
+    const size = parseInt(pageSize || '20') || 20;
+
+    return this.candidatesService.findAll({
+      skip: (pageNum - 1) * size,
+      take: size,
+      status,
+      search,
+      sortBy: sortBy || 'createdAt',
+      sortOrder: (sortOrder as 'asc' | 'desc') || 'desc',
+      skill,
+    });
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (!candidate) {
+      throw new NotFoundException('Candidate not found');
+    }
+    return candidate;
+  }
 
   @Sse(':id/extract')
   async extractInfo(@Param('id') id: string): Promise<Observable<MessageEvent>> {
@@ -60,11 +95,6 @@ export class CandidatesController {
     });
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.candidatesService.findOne(id);
-  }
-
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
@@ -87,5 +117,10 @@ export class CandidatesController {
       throw new NotFoundException('At least 2 candidates required for comparison');
     }
     return this.candidatesService.compare(candidateIds);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    return this.candidatesService.delete(id);
   }
 }

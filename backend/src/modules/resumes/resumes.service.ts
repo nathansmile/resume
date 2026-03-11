@@ -31,7 +31,7 @@ export class ResumesService {
       const candidate = await this.prisma.candidate.create({
         data: {
           name: 'Unknown', // Will be extracted by AI
-          pdfUrl: file.path,
+          pdfUrl: `/uploads/${file.filename}`,
           pdfThumbnail: thumbnail,
           rawText: rawText,
         },

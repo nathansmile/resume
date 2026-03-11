@@ -116,4 +116,96 @@ export class CandidatesService {
 
     return candidates;
   }
+
+  async findAll(params: {
+    skip?: number;
+    take?: number;
+    status?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    skill?: string;
+  }) {
+    const { skip = 0, take = 20, status, search, sortBy = 'createdAt', sortOrder = 'desc', skill } = params;
+
+    const where: any = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (skill) {
+      where.skills = {
+        some: {
+          skillName: { contains: skill, mode: 'insensitive' },
+        },
+      };
+    }
+
+    const orderBy: any = {};
+    if (sortBy === 'score') {
+      orderBy.evaluations = {
+        _max: {
+          overallScore: sortOrder,
+        },
+      };
+    } else {
+      orderBy[sortBy] = sortOrder;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.candidate.findMany({
+        where,
+        skip,
+        take,
+        orderBy,
+        include: {
+          skills: true,
+          educations: {
+            orderBy: { orderIndex: 'asc' },
+            take: 1,
+          },
+          evaluations: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: {
+              jobDescription: true,
+            },
+          },
+        },
+      }),
+      this.prisma.candidate.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: Math.floor(skip / take) + 1,
+      pageSize: take,
+    };
+  }
+
+  async delete(id: string) {
+    const candidate = await this.prisma.candidate.findUnique({
+      where: { id },
+    });
+
+    if (!candidate) {
+      throw new NotFoundException('Candidate not found');
+    }
+
+    await this.prisma.candidate.delete({
+      where: { id },
+    });
+
+    return { success: true, message: 'Candidate deleted successfully' };
+  }
 }
