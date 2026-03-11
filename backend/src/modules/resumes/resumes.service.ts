@@ -56,8 +56,8 @@ export class ResumesService {
   }
 
   async uploadMultipleResumes(files: Express.Multer.File[]) {
-    const results = [];
-    const errors = [];
+    const results: any[] = [];
+    const errors: any[] = [];
 
     for (const file of files) {
       try {

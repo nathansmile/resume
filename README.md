@@ -106,7 +106,8 @@ npm run dev
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/resume_db"
-ANTHROPIC_API_KEY="your-anthropic-api-key"
+DASHSCOPE_API_KEY="your-dashscope-api-key-here"
+DASHSCOPE_MODEL="qwen-plus"
 PORT=3000
 CORS_ORIGIN="http://localhost:5173"
 ```
@@ -227,3 +228,11 @@ resume/
 ## 许可证
 
 MIT
+
+## dev 启动步骤
+
+1. 确保 PostgreSQL 正在运行
+2. 编辑 backend/.env 填入数据库连接和 API 密钥
+3. 运行数据库迁移: cd backend && npx prisma migrate dev
+4. 启动后端: cd backend && npm run start:dev
+5. 启动前端: cd frontend && npm run dev

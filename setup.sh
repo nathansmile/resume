@@ -43,7 +43,8 @@ if [ ! -f "backend/.env" ]; then
     echo "创建后端 .env 文件..."
     cat > backend/.env << EOF
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/resume_db?schema=public"
-ANTHROPIC_API_KEY="your-api-key-here"
+DASHSCOPE_API_KEY="your-dashscope-api-key-here"
+DASHSCOPE_MODEL="qwen-plus"
 PORT=3000
 CORS_ORIGIN="http://localhost:5173"
 UPLOAD_DIR="./uploads"

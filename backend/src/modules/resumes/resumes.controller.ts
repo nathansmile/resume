@@ -5,11 +5,10 @@ import {
   Param,
   Query,
   UseInterceptors,
-  UploadedFile,
   UploadedFiles,
   BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { ResumesService } from './resumes.service';
 import * as path from 'path';
@@ -52,7 +51,13 @@ export class ResumesController {
       throw new BadRequestException('No files uploaded');
     }
 
-    return this.resumesService.uploadMultipleResumes(files);
+    // Decode originalname for each file to handle Chinese characters
+    const filesWithDecodedNames = files.map(file => ({
+      ...file,
+      originalname: Buffer.from(file.originalname, 'latin1').toString('utf8'),
+    }));
+
+    return this.resumesService.uploadMultipleResumes(filesWithDecodedNames);
   }
 
   @Get()
@@ -62,8 +67,8 @@ export class ResumesController {
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
-    const pageNum = parseInt(page) || 1;
-    const size = parseInt(pageSize) || 20;
+    const pageNum = parseInt(page || '1') || 1;
+    const size = parseInt(pageSize || '20') || 20;
 
     return this.resumesService.findAll({
       skip: (pageNum - 1) * size,

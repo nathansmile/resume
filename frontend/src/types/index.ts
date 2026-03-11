@@ -75,13 +75,7 @@ export interface Evaluation {
   jobDescription?: Partial<JobDescription>;
 }
 
-export enum CandidateStatus {
-  PENDING = 'PENDING',
-  INITIAL_PASS = 'INITIAL_PASS',
-  INTERVIEWING = 'INTERVIEWING',
-  HIRED = 'HIRED',
-  REJECTED = 'REJECTED',
-}
+export type CandidateStatus = 'PENDING' | 'INITIAL_PASS' | 'INTERVIEWING' | 'HIRED' | 'REJECTED';
 
 export interface UploadResult {
   success: boolean;
