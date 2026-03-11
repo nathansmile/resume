@@ -40,17 +40,26 @@ export const authApi = {
 
 // Resumes API
 export const resumesApi = {
-  upload: (files: File[]) => {
+  upload: async (files: File[]) => {
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('files', file);
     });
-    // 使用原生 axios 而非实例，避免默认 Content-Type 干扰
-    return axios.post(`${API_BASE_URL}/resumes/upload`, formData, {
+
+    const response = await fetch(`${API_BASE_URL}/resumes/upload`, {
+      method: 'POST',
+      body: formData,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return { data: await response.json() };
   },
   getAll: (params?: { page?: number; pageSize?: number; status?: string; search?: string }) =>
     api.get('/resumes', { params }),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Button, Card, List, message, Row, Col, Spin } from 'antd';
 import { InboxOutlined, FileImageOutlined } from '@ant-design/icons';
@@ -13,14 +13,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 const { Dragger } = Upload;
 
-interface FileWithPreview extends File {
-  preview?: string;
-}
 
 export const UploadPage: React.FC = () => {
-  const [fileList, setFileList] = useState<FileWithPreview[]>([]);
+  const [fileList, setFileList] = useState<File[]>([]);
   const [uploadResults, setUploadResults] = useState<UploadResult[]>([]);
+  const [previews, setPreviews] = useState<Map<string, string>>(new Map());
   const [loadingPreviews, setLoadingPreviews] = useState<Set<string>>(new Set());
+  // previews map: file.name -> data URL
   const navigate = useNavigate();
 
   const uploadMutation = useMutation({
@@ -39,12 +38,7 @@ export const UploadPage: React.FC = () => {
         message.error(`${failCount} 份简历上传失败`);
       }
 
-      // 清理预览
-      fileList.forEach(file => {
-        if (file.preview) {
-          URL.revokeObjectURL(file.preview);
-        }
-      });
+      setPreviews(new Map());
       setFileList([]);
     },
     onError: () => {
@@ -53,7 +47,7 @@ export const UploadPage: React.FC = () => {
   });
 
   // 生成 PDF 预览
-  const generatePreview = async (file: FileWithPreview) => {
+  const generatePreview = async (file: File) => {
     setLoadingPreviews(prev => new Set(prev).add(file.name));
 
     try {
@@ -75,12 +69,7 @@ export const UploadPage: React.FC = () => {
         }).promise;
 
         const preview = canvas.toDataURL('image/jpeg', 0.8);
-
-        setFileList(prev =>
-          prev.map(f =>
-            f.name === file.name ? { ...f, preview } : f
-          )
-        );
+        setPreviews(prev => new Map(prev).set(file.name, preview));
       }
 
       URL.revokeObjectURL(fileUrl);
@@ -120,28 +109,17 @@ export const UploadPage: React.FC = () => {
       return false;
     }
 
-    // 创建一个干净的 File 对象，去除 Ant Design 添加的额外属性
-    const cleanFile = new File([realFile], realFile.name, {
-      type: realFile.type,
-      lastModified: realFile.lastModified,
-    }) as FileWithPreview;
-
-    setFileList((prev) => [...prev, cleanFile]);
+    setFileList((prev) => [...prev, realFile]);
 
     // 异步生成预览
-    generatePreview(cleanFile);
+    generatePreview(realFile);
 
     return false;
   };
 
   const handleRemove = (fileName: string) => {
-    setFileList((prev) => {
-      const file = prev.find(f => f.name === fileName);
-      if (file?.preview) {
-        URL.revokeObjectURL(file.preview);
-      }
-      return prev.filter((f) => f.name !== fileName);
-    });
+    setPreviews(prev => { const m = new Map(prev); m.delete(fileName); return m; });
+    setFileList((prev) => prev.filter((f) => f.name !== fileName));
   };
 
   const handleUpload = () => {
@@ -150,23 +128,17 @@ export const UploadPage: React.FC = () => {
       return;
     }
 
-    console.log('Uploading files:', fileList);
-    console.log('File types:', fileList.map(f => ({ name: f.name, type: f.type, size: f.size })));
+    // 手动构建数组
+    const filesToUpload: File[] = [];
+    for (let i = 0; i < fileList.length; i++) {
+      if (fileList[i] instanceof File) {
+        filesToUpload.push(fileList[i]);
+      }
+    }
 
-    // fileList 中的元素已经是 File 对象，直接传递
-    uploadMutation.mutate(fileList as File[]);
+    uploadMutation.mutate(filesToUpload);
   };
 
-  // 清理预览 URL
-  useEffect(() => {
-    return () => {
-      fileList.forEach(file => {
-        if (file.preview) {
-          URL.revokeObjectURL(file.preview);
-        }
-      });
-    };
-  }, []);
 
   return (
     <div>
@@ -216,10 +188,10 @@ export const UploadPage: React.FC = () => {
                         position: 'relative'
                       }}>
                         {loadingPreviews.has(file.name) ? (
-                          <Spin tip="生成预览..." />
-                        ) : file.preview ? (
+                          <Spin description="生成预览..." />
+                        ) : previews.get(file.name) ? (
                           <img
-                            src={file.preview}
+                            src={previews.get(file.name)}
                             alt={file.name}
                             style={{
                               maxWidth: '100%',
