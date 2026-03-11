@@ -88,3 +88,44 @@ export interface UploadResult {
   error?: string;
   filename: string;
 }
+
+export interface ExtractedBasicInfo {
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+}
+
+export interface ExtractedEducation {
+  school: string;
+  major?: string;
+  degree?: string;
+  graduationDate?: string;
+}
+
+export interface ExtractedWorkExperience {
+  company: string;
+  position: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+}
+
+export interface ExtractedProject {
+  projectName: string;
+  techStack: string[];
+  role?: string;
+  highlights?: string;
+}
+
+export interface ExtractedInfo {
+  basicInfo?: ExtractedBasicInfo;
+  educations?: ExtractedEducation[];
+  workExperiences?: ExtractedWorkExperience[];
+  skills?: string[];
+  projects?: ExtractedProject[];
+}
+
+export interface StreamingData extends ExtractedInfo {
+  streamingText?: string;
+}

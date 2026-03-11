@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Layout as AntLayout, Menu, Button } from 'antd';
-import { UploadOutlined, TeamOutlined, FileTextOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Layout as AntLayout, Menu, Button, Switch } from 'antd';
+import { UploadOutlined, TeamOutlined, FileTextOutlined, LogoutOutlined, BulbOutlined, BulbFilled } from '@ant-design/icons';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Header, Content, Sider } = AntLayout;
 
 export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { themeMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -49,6 +51,12 @@ export const Layout: React.FC = () => {
           简历智能筛选系统
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Switch
+            checked={themeMode === 'dark'}
+            onChange={toggleTheme}
+            checkedChildren={<BulbFilled />}
+            unCheckedChildren={<BulbOutlined />}
+          />
           <span style={{ color: 'white' }}>欢迎，{username}</span>
           <Button
             type="text"

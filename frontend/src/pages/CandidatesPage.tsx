@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Table, Input, Select, Button, Tag, Space, Card, Row, Col, Checkbox, Modal, Descriptions, Popconfirm, message } from 'antd';
 import { EyeOutlined, AppstoreOutlined, UnorderedListOutlined, SwapOutlined, DeleteOutlined } from '@ant-design/icons';
 import { candidatesApi } from '../lib/api';
+import { TableSkeleton, CandidateListSkeleton } from '../components/Skeletons';
 import type { Candidate, CandidateStatus, Evaluation } from '../types';
 
 const { Search } = Input;
@@ -34,6 +35,7 @@ export const CandidatesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [compareModalVisible, setCompareModalVisible] = useState(false);
+  const [selectedJobFilter, setSelectedJobFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const navigate = useNavigate();
@@ -68,46 +70,151 @@ export const CandidatesPage: React.FC = () => {
     if (selectedCandidates.length < 2 || selectedCandidates.length > 3) {
       return;
     }
+    setSelectedJobFilter('');
     setCompareModalVisible(true);
   };
 
+  // Fetch full candidate data for comparison
+  const { data: compareData } = useQuery({
+    queryKey: ['candidates-compare', selectedCandidates],
+    queryFn: () => candidatesApi.compare(selectedCandidates),
+    enabled: compareModalVisible && selectedCandidates.length >= 2,
+  });
+
   const renderCompareModal = () => {
-    const candidates = data?.data.data.filter((c: Candidate) =>
-      selectedCandidates.includes(c.id)
-    );
+    const candidates = compareData?.data || [];
+    const colSpan = candidates?.length === 2 ? 12 : 8;
+
+    // Find common jobs across all candidates
+    const commonJobs: Array<{ id: string; title: string }> = [];
+    if (candidates.length > 0) {
+      const firstCandidateJobs = candidates[0].evaluations?.map((ev: Evaluation) => ({
+        id: ev.jobId,
+        title: ev.jobDescription?.title || '未知岗位',
+      })) || [];
+
+      firstCandidateJobs.forEach((job: { id: string; title: string }) => {
+        const isCommon = candidates.every((candidate: Candidate) =>
+          candidate.evaluations?.some((ev: Evaluation) => ev.jobId === job.id)
+        );
+        if (isCommon) {
+          commonJobs.push(job);
+        }
+      });
+    }
+
+    // Filter evaluations by selected job
+    const getFilteredEvaluations = (candidate: Candidate) => {
+      if (!selectedJobFilter) return candidate.evaluations || [];
+      return candidate.evaluations?.filter((ev: Evaluation) => ev.jobId === selectedJobFilter) || [];
+    };
 
     return (
       <Modal
         title="候选人对比"
         open={compareModalVisible}
         onCancel={() => setCompareModalVisible(false)}
-        width={1000}
+        width={1100}
         footer={null}
       >
+        {commonJobs.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <Space>
+              <span>岗位筛选:</span>
+              <Select
+                style={{ width: 200 }}
+                placeholder="全部岗位"
+                allowClear
+                value={selectedJobFilter || undefined}
+                onChange={(value) => setSelectedJobFilter(value || '')}
+              >
+                {commonJobs.map((job) => (
+                  <Option key={job.id} value={job.id}>
+                    {job.title}
+                  </Option>
+                ))}
+              </Select>
+              {commonJobs.length > 0 && (
+                <Tag color="blue">共同岗位: {commonJobs.length}</Tag>
+              )}
+            </Space>
+          </div>
+        )}
+
         <Row gutter={16}>
-          {candidates?.map((candidate: Candidate) => (
-            <Col span={8} key={candidate.id}>
-              <Card title={candidate.name} size="small">
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="邮箱">{candidate.email || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="电话">{candidate.phone || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="城市">{candidate.city || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="状态">
-                    <Tag color={statusColors[candidate.status]}>
-                      {statusLabels[candidate.status]}
-                    </Tag>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="技能">
-                    {candidate.skills?.map((skill) => (
-                      <Tag key={skill.id} style={{ marginBottom: 6, marginRight: 6 }}>
-                        {skill.skillName}
+          {candidates?.map((candidate: Candidate) => {
+            const filteredEvaluations = getFilteredEvaluations(candidate);
+
+            return (
+              <Col span={colSpan} key={candidate.id}>
+                <Card title={candidate.name} size="small">
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="邮箱">{candidate.email || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="电话">{candidate.phone || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="城市">{candidate.city || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="状态">
+                      <Tag color={statusColors[candidate.status]}>
+                        {statusLabels[candidate.status]}
                       </Tag>
-                    ))}
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
-            </Col>
-          ))}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="技能">
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxHeight: 80, overflow: 'auto' }}>
+                        {candidate.skills?.slice(0, 10).map((skill) => (
+                          <Tag key={skill.id} style={{ margin: 0 }}>
+                            {skill.skillName}
+                          </Tag>
+                        ))}
+                        {candidate.skills && candidate.skills.length > 10 && (
+                          <Tag>+{candidate.skills.length - 10}</Tag>
+                        )}
+                      </div>
+                    </Descriptions.Item>
+                  </Descriptions>
+
+                  {filteredEvaluations.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <strong style={{ fontSize: 12 }}>岗位评分</strong>
+                      {filteredEvaluations.map((ev: Evaluation) => (
+                        <div key={ev.id} style={{ marginTop: 8, padding: 8, background: '#fafafa', borderRadius: 4 }}>
+                          <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                            {ev.jobDescription?.title || '未知岗位'}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, width: 60 }}>综合</span>
+                            <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 8 }}>
+                              <div style={{ width: `${ev.overallScore}%`, background: ev.overallScore >= 80 ? '#52c41a' : ev.overallScore >= 60 ? '#faad14' : '#ff4d4f', height: '100%', borderRadius: 4 }} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 'bold', width: 32 }}>{ev.overallScore}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, width: 60 }}>技能</span>
+                            <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 8 }}>
+                              <div style={{ width: `${ev.skillMatchScore}%`, background: '#1890ff', height: '100%', borderRadius: 4 }} />
+                            </div>
+                            <span style={{ fontSize: 12, width: 32 }}>{ev.skillMatchScore}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, width: 60 }}>经验</span>
+                            <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 8 }}>
+                              <div style={{ width: `${ev.experienceScore}%`, background: '#1890ff', height: '100%', borderRadius: 4 }} />
+                            </div>
+                            <span style={{ fontSize: 12, width: 32 }}>{ev.experienceScore}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, width: 60 }}>教育</span>
+                            <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 8 }}>
+                              <div style={{ width: `${ev.educationScore}%`, background: '#1890ff', height: '100%', borderRadius: 4 }} />
+                            </div>
+                            <span style={{ fontSize: 12, width: 32 }}>{ev.educationScore}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
       </Modal>
     );
@@ -377,36 +484,40 @@ export const CandidatesPage: React.FC = () => {
           </Row>
 
           {viewMode === 'table' ? (
-            <Table
-              columns={columns}
-              dataSource={data?.data.data || []}
-              rowKey="id"
-              loading={isLoading}
-              onChange={(_, __, sorter) => {
-                const s = sorter as { field?: string; order?: string };
-                if (s.field && s.order) {
-                  setSortBy(s.field);
-                  setSortOrder(s.order === 'ascend' ? 'asc' : 'desc');
-                } else {
-                  setSortBy('createdAt');
-                  setSortOrder('desc');
-                }
-              }}
-              pagination={{
-                current: page,
-                pageSize,
-                total: data?.data.total || 0,
-                showSizeChanger: true,
-                showTotal: (total) => `共 ${total} 条`,
-                onChange: (page, pageSize) => {
-                  setPage(page);
-                  setPageSize(pageSize);
-                },
-              }}
-            />
+            isLoading ? (
+              <TableSkeleton />
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={data?.data.data || []}
+                rowKey="id"
+                loading={false}
+                onChange={(_, __, sorter) => {
+                  const s = sorter as { field?: string; order?: string };
+                  if (s.field && s.order) {
+                    setSortBy(s.field);
+                    setSortOrder(s.order === 'ascend' ? 'asc' : 'desc');
+                  } else {
+                    setSortBy('createdAt');
+                    setSortOrder('desc');
+                  }
+                }}
+                pagination={{
+                  current: page,
+                  pageSize,
+                  total: data?.data.total || 0,
+                  showSizeChanger: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (page, pageSize) => {
+                    setPage(page);
+                    setPageSize(pageSize);
+                  },
+                }}
+              />
+            )
           ) : (
             <>
-              {renderCardView()}
+              {isLoading ? <CandidateListSkeleton /> : renderCardView()}
               <div style={{ marginTop: 16, textAlign: 'center' }}>
                 <Space>
                   <Button
