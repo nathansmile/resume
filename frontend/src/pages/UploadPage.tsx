@@ -96,8 +96,12 @@ export const UploadPage: React.FC = () => {
   };
 
   const beforeUpload = (file: File | UploadFile) => {
-    // 从 UploadFile 中提取真正的 File 对象
-    const realFile = (file as any).originFileObj || file as File;
+    const realFile = (file instanceof File) ? file : ((file as any).originFileObj as File);
+
+    if (!realFile) {
+      message.error('文件读取失败');
+      return false;
+    }
 
     const isPDF = realFile.type === 'application/pdf';
     if (!isPDF) {
@@ -116,11 +120,16 @@ export const UploadPage: React.FC = () => {
       return false;
     }
 
-    const fileWithPreview = realFile as FileWithPreview;
-    setFileList((prev) => [...prev, fileWithPreview]);
+    // 创建一个干净的 File 对象，去除 Ant Design 添加的额外属性
+    const cleanFile = new File([realFile], realFile.name, {
+      type: realFile.type,
+      lastModified: realFile.lastModified,
+    }) as FileWithPreview;
+
+    setFileList((prev) => [...prev, cleanFile]);
 
     // 异步生成预览
-    generatePreview(fileWithPreview);
+    generatePreview(cleanFile);
 
     return false;
   };
@@ -144,7 +153,8 @@ export const UploadPage: React.FC = () => {
     console.log('Uploading files:', fileList);
     console.log('File types:', fileList.map(f => ({ name: f.name, type: f.type, size: f.size })));
 
-    uploadMutation.mutate(fileList);
+    // fileList 中的元素已经是 File 对象，直接传递
+    uploadMutation.mutate(fileList as File[]);
   };
 
   // 清理预览 URL

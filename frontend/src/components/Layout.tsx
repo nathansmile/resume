@@ -1,15 +1,19 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Layout as AntLayout, Menu, Button, Switch } from 'antd';
-import { UploadOutlined, TeamOutlined, FileTextOutlined, LogoutOutlined, BulbOutlined, BulbFilled } from '@ant-design/icons';
+import { UploadOutlined, TeamOutlined, FileTextOutlined, LogoutOutlined, BulbOutlined, BulbFilled, RobotOutlined } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
 
-const { Header, Content, Sider } = AntLayout;
+const { Header, Content, Sider, Footer } = AntLayout;
 
 export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { themeMode, toggleTheme } = useTheme();
+
+  const headerBg = themeMode === 'dark'
+    ? 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)'
+    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,9 +50,38 @@ export const Layout: React.FC = () => {
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#001529' }}>
-        <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
-          简历智能筛选系统
+      <Header style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: headerBg,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        padding: '0 24px',
+        height: '64px',
+        lineHeight: 'normal'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: 'rgba(255,255,255,0.2)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(10px)',
+            flexShrink: 0
+          }}>
+            <RobotOutlined style={{ fontSize: '20px', color: 'white' }} />
+          </div>
+          <div>
+            <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold', lineHeight: 1.3 }}>
+              简历智能筛选系统
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', lineHeight: 1.2 }}>
+              AI-Powered Resume Screening
+            </div>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <Switch
@@ -88,6 +121,9 @@ export const Layout: React.FC = () => {
           >
             <Outlet />
           </Content>
+          <Footer style={{ textAlign: 'center', padding: '16px 0', fontSize: '12px', color: '#999' }}>
+            © 2026 Resume Screening System · Developed by Nathan Jiang
+          </Footer>
         </AntLayout>
       </AntLayout>
     </AntLayout>

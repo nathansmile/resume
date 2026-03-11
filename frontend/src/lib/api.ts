@@ -42,14 +42,15 @@ export const authApi = {
 export const resumesApi = {
   upload: (files: File[]) => {
     const formData = new FormData();
-    console.log('Creating FormData with files:', files);
     files.forEach((file) => {
-      console.log('Appending file:', file.name, file.type, file.size);
       formData.append('files', file);
     });
-    console.log('FormData entries:', Array.from(formData.entries()));
-    // 不设置 Content-Type，让浏览器自动设置正确的 multipart/form-data boundary
-    return api.post('/resumes/upload', formData);
+    // 使用原生 axios 而非实例，避免默认 Content-Type 干扰
+    return axios.post(`${API_BASE_URL}/resumes/upload`, formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
   },
   getAll: (params?: { page?: number; pageSize?: number; status?: string; search?: string }) =>
     api.get('/resumes', { params }),
@@ -58,7 +59,7 @@ export const resumesApi = {
 
 // Candidates API
 export const candidatesApi = {
-  getAll: (params?: { page?: number; pageSize?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string; skill?: string }) =>
+  getAll: (params?: { page?: number; pageSize?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string }) =>
     api.get('/candidates', { params }),
   getOne: (id: string) => api.get(`/candidates/${id}`),
   updateStatus: (id: string, status: string) =>

@@ -32,7 +32,6 @@ export class CandidatesController {
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
-    @Query('skill') skill?: string,
   ) {
     const pageNum = parseInt(page || '1') || 1;
     const size = parseInt(pageSize || '20') || 20;
@@ -44,7 +43,6 @@ export class CandidatesController {
       search,
       sortBy: sortBy || 'createdAt',
       sortOrder: (sortOrder as 'asc' | 'desc') || 'desc',
-      skill,
     });
   }
 

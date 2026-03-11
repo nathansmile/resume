@@ -124,9 +124,8 @@ export class CandidatesService {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
-    skill?: string;
   }) {
-    const { skip = 0, take = 20, status, search, sortBy = 'createdAt', sortOrder = 'desc', skill } = params;
+    const { skip = 0, take = 20, status, search, sortBy = 'createdAt', sortOrder = 'desc' } = params;
 
     const where: any = {};
 
@@ -139,15 +138,21 @@ export class CandidatesService {
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
         { phone: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (skill) {
-      where.skills = {
-        some: {
-          skillName: { contains: skill, mode: 'insensitive' },
+        {
+          skills: {
+            some: {
+              skillName: { contains: search, mode: 'insensitive' },
+            },
+          },
         },
-      };
+        {
+          educations: {
+            some: {
+              school: { contains: search, mode: 'insensitive' },
+            },
+          },
+        },
+      ];
     }
 
     const orderBy: any = sortBy === 'score' ? { createdAt: 'desc' } : { [sortBy]: sortOrder };

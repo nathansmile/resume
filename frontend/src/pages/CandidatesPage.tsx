@@ -31,7 +31,6 @@ export const CandidatesPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
   const [status, setStatus] = useState<string>('');
   const [search, setSearch] = useState('');
-  const [skillFilter, setSkillFilter] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [compareModalVisible, setCompareModalVisible] = useState(false);
@@ -42,7 +41,7 @@ export const CandidatesPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['candidates', page, pageSize, status, search, sortBy, sortOrder, skillFilter],
+    queryKey: ['candidates', page, pageSize, status, search, sortBy, sortOrder],
     queryFn: () =>
       candidatesApi.getAll({
         page,
@@ -51,7 +50,6 @@ export const CandidatesPage: React.FC = () => {
         search,
         sortBy,
         sortOrder,
-        skill: skillFilter,
       }),
   });
 
@@ -428,7 +426,7 @@ export const CandidatesPage: React.FC = () => {
           <Row gutter={16}>
             <Col span={6}>
               <Search
-                placeholder="搜索姓名、邮箱、电话"
+                placeholder="搜索姓名、邮箱、电话、技能、学校"
                 onSearch={setSearch}
                 allowClear
               />
@@ -446,13 +444,6 @@ export const CandidatesPage: React.FC = () => {
                 <Option value="HIRED">已录用</Option>
                 <Option value="REJECTED">已淘汰</Option>
               </Select>
-            </Col>
-            <Col span={4}>
-              <Input
-                placeholder="技能筛选"
-                allowClear
-                onChange={(e) => setSkillFilter(e.target.value)}
-              />
             </Col>
             {viewMode === 'card' && (
               <>
