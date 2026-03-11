@@ -69,7 +69,7 @@ export const Layout: React.FC = () => {
         </div>
       </Header>
       <AntLayout>
-        <Sider width={200} style={{ background: '#fff' }}>
+        <Sider width={200}>
           <Menu
             mode="inline"
             selectedKeys={[location.pathname]}
@@ -83,7 +83,6 @@ export const Layout: React.FC = () => {
               padding: 24,
               margin: 0,
               minHeight: 280,
-              background: '#fff',
               borderRadius: '8px',
             }}
           >
