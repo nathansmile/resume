@@ -9,14 +9,27 @@ export class PdfService {
 
       // Use PDFParse class from pdf-parse module
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { PDFParse } = require('pdf-parse');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const parser = new PDFParse();
+      const { PDFParse, VerbosityLevel } = require('pdf-parse');
+      
+      // Create parser with options and data
+      const parser = new PDFParse({
+        data: dataBuffer,
+        verbosity: VerbosityLevel.ERRORS,
+      });
+      
+      // Load and parse the PDF
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      const data = await parser.parse(dataBuffer);
-
+      await parser.load();
+      
+      // Get the text - returns an object with .text property
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      const result = await parser.getText();
+      
+      // Extract the text string from the result object
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      return this.cleanText(data.text as string);
+      const text = result?.text || '';
+
+      return this.cleanText(text as string);
     } catch (error: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       throw new Error(`Failed to extract PDF text: ${error.message as string}`);
@@ -24,6 +37,11 @@ export class PdfService {
   }
 
   private cleanText(text: string): string {
+    // Ensure text is a string
+    if (typeof text !== 'string') {
+      return '';
+    }
+
     // Remove excessive whitespace
     let cleaned = text.replace(/\s+/g, ' ');
 

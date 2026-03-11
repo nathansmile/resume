@@ -26,7 +26,8 @@ export class ResumesController {
 
   @Post('upload')
   @UseInterceptors(
-    FilesInterceptor('files', 5, {
+    FilesInterceptor('files', 100, {
+      // Changed from 5 to 100
       storage: diskStorage({
         destination: uploadsDir,
         filename: (req, file, cb) => {
@@ -52,7 +53,7 @@ export class ResumesController {
     }
 
     // Decode originalname for each file to handle Chinese characters
-    const filesWithDecodedNames = files.map(file => ({
+    const filesWithDecodedNames = files.map((file) => ({
       ...file,
       originalname: Buffer.from(file.originalname, 'latin1').toString('utf8'),
     }));

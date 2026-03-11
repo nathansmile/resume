@@ -50,8 +50,8 @@ export const UploadPage: React.FC = () => {
       return false;
     }
 
-    if (fileList.length >= 5) {
-      message.error('最多只能上传 5 份简历！');
+    if (fileList.length >= 100) {
+      message.error('最多只能上传 100 份简历！');
       return false;
     }
 
@@ -88,7 +88,7 @@ export const UploadPage: React.FC = () => {
           </p>
           <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
           <p className="ant-upload-hint">
-            支持批量上传，最多同时上传 5 份简历。仅支持 PDF 格式，单个文件不超过 10MB。
+            支持批量上传，最多同时上传 100 份简历。仅支持 PDF 格式，单个文件不超过 10MB。
           </p>
         </Dragger>
 

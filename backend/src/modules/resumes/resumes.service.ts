@@ -2,7 +2,6 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfService } from './pdf.service';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 
 @Injectable()
 export class ResumesService {
@@ -12,21 +11,17 @@ export class ResumesService {
   ) {}
 
   async uploadResume(file: Express.Multer.File) {
-    // Validate file
-    if (!file.mimetype.includes('pdf')) {
-      throw new BadRequestException('Only PDF files are allowed');
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      throw new BadRequestException('File size must be less than 10MB');
-    }
-
     try {
+      // Validate file
+      if (!file.mimetype.includes('pdf')) {
+        throw new BadRequestException('Only PDF files are allowed');
+      }
+
       // Extract text from PDF
       const rawText = await this.pdfService.extractText(file.path);
 
-      if (!rawText || rawText.length < 50) {
-        throw new BadRequestException('PDF appears to be empty or unreadable');
+      if (!rawText || rawText.trim().length === 0) {
+        throw new BadRequestException('PDF文件为空或无法提取文本');
       }
 
       // Generate thumbnail (optional)
@@ -48,10 +43,15 @@ export class ResumesService {
         rawText: rawText.substring(0, 500), // Return preview
         createdAt: candidate.createdAt,
       };
-    } catch (error) {
+    } catch (error: any) {
       // Clean up file if processing failed
       await fs.unlink(file.path).catch(() => {});
-      throw error;
+      
+      // Re-throw with better error message
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`PDF处理失败: ${error.message || '未知错误'}`);
     }
   }
 
@@ -63,12 +63,13 @@ export class ResumesService {
       try {
         const result = await this.uploadResume(file);
         results.push({ success: true, data: result, filename: file.originalname });
-      } catch (error) {
-        errors.push({ success: false, error: error.message, filename: file.originalname });
+      } catch (error: any) {
+        const errorMessage = error.message || error.toString();
+        results.push({ success: false, error: errorMessage, filename: file.originalname });
       }
     }
 
-    return { results, errors };
+    return { results, errors: [] };
   }
 
   async findOne(id: string) {
@@ -88,13 +89,13 @@ export class ResumesService {
     });
   }
 
-  async findAll(params?: {
+  async findAll(params: {
     skip?: number;
     take?: number;
     status?: string;
     search?: string;
   }) {
-    const { skip = 0, take = 20, status, search } = params || {};
+    const { skip = 0, take = 20, status, search } = params;
 
     const where: any = {};
 
@@ -106,11 +107,11 @@ export class ResumesService {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-        { rawText: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    const [candidates, total] = await Promise.all([
+    const [data, total] = await Promise.all([
       this.prisma.candidate.findMany({
         where,
         skip,
@@ -118,17 +119,14 @@ export class ResumesService {
         orderBy: { createdAt: 'desc' },
         include: {
           skills: true,
-          evaluations: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
+          educations: true,
         },
       }),
       this.prisma.candidate.count({ where }),
     ]);
 
     return {
-      data: candidates,
+      data,
       total,
       page: Math.floor(skip / take) + 1,
       pageSize: take,
