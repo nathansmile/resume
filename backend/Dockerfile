@@ -30,12 +30,17 @@ COPY . .
 #COPY . .
 
 # 创建非 root 用户并以该用户运行 (提升安全性) [citation:1]
-RUN addgroup -g 1000 -S nodejs && \
-    adduser -S nodejs -u 1000 -G nodejs
-USER nodejs
+# Alpine Linux 的正确用户创建语法
+#RUN addgroup -g 1000 -S nodejs && \
+#    adduser -u 1000 -S nodejs -G nodejs
+# 不需要自己创建用户
+USER node
+
+# 切换到非 root 用户
+#USER nodejs
 
 # 暴露应用运行的端口 (例如 3000)
 EXPOSE 3000
 
 # 定义容器启动时执行的命令
-CMD ["node", "dist/main.js"] # 根据你的启动文件调整
+CMD ["node", "dist/main.js"]
